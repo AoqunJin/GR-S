@@ -25,10 +25,16 @@ This repo contains code for the paper:
 # clone this repository
 git clone https://github.com/bytedance/GR-MG.git
 cd GR_MG
+
+# install base dependencies
+sudo apt-get -y install libosmesa6-dev patchelf
+
 # install dependencies for goal image generation model
-bash ./goal_gen/install.sh
-# install dependencies for multi-modal goal conditioned policy
-bash ./policy/install.sh
+# and multi-modal goal conditioned policy
+uv venv --python 3.9
+source .venv/bin/activate
+uv pip compile requirements.in -o requirements.txt
+uv pip sync requirements.txt
 ```
 Download the pretrained [InstructPix2Pix](https://huggingface.co/timbrooks/instruct-pix2pix) weights from Huggingface and save them in `resources/IP2P/`. 
 Download the pretrained MAE encoder [mae_pretrain_vit_base.pth ](https://dl.fbaipublicfiles.com/mae/pretrain/mae_pretrain_vit_base.pth) and save it in `resources/MAE/`.

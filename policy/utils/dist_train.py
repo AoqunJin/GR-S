@@ -20,6 +20,7 @@ import torch.distributed as dist
 
 _print = print
 
+
 def get_world_size(): return int(os.getenv('WORLD_SIZE', 1))
 def get_rank(): return int(os.getenv('RANK', 0))
 def get_local_rank(): return int(os.getenv('LOCAL_RANK', 0))
@@ -27,6 +28,7 @@ def get_local_rank(): return int(os.getenv('LOCAL_RANK', 0))
 
 def is_dist():
     return dist.is_available() and dist.is_initialized() and get_world_size() > 1
+
 
 def print(*argc, all=False, **kwargs):
     if not is_dist():
@@ -48,6 +50,7 @@ def print(*argc, all=False, **kwargs):
     s = '[rank {}] {}'.format(dist.get_rank(), s)
     _print(s)
 
+
 def reduce_mean(tensor, nprocs=None):
     if not is_dist():
         return tensor
@@ -62,6 +65,7 @@ def reduce_mean(tensor, nprocs=None):
     if not isinstance(tensor, torch.Tensor):
         rt = rt.item()
     return rt
+
 
 def reduce_sum(tensor):
     if not is_dist():

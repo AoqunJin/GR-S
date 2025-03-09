@@ -31,6 +31,8 @@ import datetime
 from data.calvindataset import CalvinDataset_Goalgen
 from goal_gen.training.trainer import Goalgen_Trainer
 from torch.utils.data import DataLoader
+
+
 def get_date_str():
     return str(datetime.date.today())
 
@@ -41,6 +43,7 @@ def init_setup_callback(config):
         logdir=config['log_dir'],
         ckptdir=config['ckpt_dir'],
     )
+
 
 def init_trainer_config(configs):
     trainer_config = copy.deepcopy(configs['trainer'])
@@ -57,7 +60,8 @@ def init_trainer_config(configs):
     configs['log_dir'] = log_dir
     Path(configs['log_dir']).mkdir(parents=True, exist_ok=True)
     loggers = []
-    loggers.append(TensorBoardLogger(log_dir, name=exp_name)) # you can also add other loggers 
+    # you can also add other loggers
+    loggers.append(TensorBoardLogger(log_dir, name=exp_name))
     trainer_config['logger'] = loggers
     ckpt_dir = os.path.join(get_date_str(), exp_name)
     ckpt_dir = os.path.join(configs['ckpt_root'], ckpt_dir)
@@ -66,7 +70,7 @@ def init_trainer_config(configs):
     trainer_config['callbacks'] = [
         init_setup_callback(configs),
         LearningRateMonitor(logging_interval='step'),
-        ModelCheckpoint(dirpath=ckpt_dir, save_top_k=-1,every_n_epochs=1)
+        ModelCheckpoint(dirpath=ckpt_dir, save_top_k=-1, every_n_epochs=1)
     ]
     return trainer_config
 
@@ -89,40 +93,41 @@ def experiment(variant):
     model = Goalgen_Trainer(variant)
 
     # dataset
-    train_data= CalvinDataset_Goalgen(
-                data_dir="/PATH_TO_CALVIN/calvin/task_ABC_D/",
-                resolution=256,
-                resolution_before_crop=288,
-                center_crop=False,
-                forward_n_min_max=[20, 22],
-                use_full=True,
-                is_training=True,
-                color_aug=True)
-    val_data= CalvinDataset_Goalgen(
-                data_dir="/PATH_TO_CALVIN/calvin/task_ABC_D/",
-                resolution=256,
-                resolution_before_crop=288,
-                center_crop=False,
-                forward_n_min_max=[20, 22],
-                use_full = True,
-                is_training=False,
-                color_aug=False)
-    train_dataloader= DataLoader(train_data, 
-        batch_size=variant["batch_size"],
-        num_workers=variant["num_workers"])
-    val_dataloader= DataLoader(val_data, 
-        batch_size=variant["batch_size"],
-        num_workers=variant["num_workers"])
+    train_data = CalvinDataset_Goalgen(
+        data_dir="/PATH_TO_CALVIN/calvin/task_ABC_D/",
+        resolution=256,
+        resolution_before_crop=288,
+        center_crop=False,
+        forward_n_min_max=[20, 22],
+        use_full=True,
+        is_training=True,
+        color_aug=True)
+    val_data = CalvinDataset_Goalgen(
+        data_dir="/PATH_TO_CALVIN/calvin/task_ABC_D/",
+        resolution=256,
+        resolution_before_crop=288,
+        center_crop=False,
+        forward_n_min_max=[20, 22],
+        use_full=True,
+        is_training=False,
+        color_aug=False)
+    train_dataloader = DataLoader(train_data,
+                                  batch_size=variant["batch_size"],
+                                  num_workers=variant["num_workers"])
+    val_dataloader = DataLoader(val_data,
+                                batch_size=variant["batch_size"],
+                                num_workers=variant["num_workers"])
 
     _kwargs = {
         'model': model,
-        'train_dataloaders':train_dataloader,
-        'val_dataloaders':val_dataloader,
+        'train_dataloaders': train_dataloader,
+        'val_dataloaders': val_dataloader,
         'ckpt_path': variant['resume']
     }
     if _kwargs['ckpt_path'] is not None:
         print(f"Resuming from {variant['resume']}...")
     trainer.fit(**_kwargs)
+
 
 def deep_update(d1, d2):
     # use d2 to update d1
@@ -134,6 +139,7 @@ def deep_update(d1, d2):
             d1[k] = d2[k]
     return d1
 
+
 def load_config(config_file):
     _config = json.load(open(config_file))
     config = {}
@@ -141,6 +147,7 @@ def load_config(config_file):
         deep_update(config, load_config(_config['parent']))
     deep_update(config, _config)
     return config
+
 
 def update_configs(configs, args):
     for (k, v) in args.items():
@@ -157,9 +164,10 @@ def update_configs(configs, args):
                 configs[k] = v
     return configs
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str,default="")
+    parser.add_argument('--config', type=str, default="")
     parser.add_argument('--gpus', default=1, type=int)
     parser.add_argument('--num_nodes', default=1, type=int)
     parser.add_argument('--seed', default=None, type=int)
@@ -179,16 +187,19 @@ def parse_args():
     parser.add_argument('--adam_epsilon', default=None, type=float)
 
     # Diffusion
-    parser.add_argument("--conditioning_dropout_prob", default=None, type=float)
+    parser.add_argument("--conditioning_dropout_prob",
+                        default=None, type=float)
     global_names = set(vars(parser.parse_known_args()[0]).keys())
-    
+
     # Trainer
     trainer_parser = parser.add_argument_group('trainer')
     trainer_parser.add_argument('--strategy', default=None, type=str)
     trainer_parser.add_argument('--precision', default=None, type=str)
-    trainer_parser.add_argument('--gradient_clip_val', default=None, type=float)
+    trainer_parser.add_argument(
+        '--gradient_clip_val', default=None, type=float)
     trainer_parser.add_argument('--max_epochs', default=None, type=int)
-    trainer_names = set(vars(parser.parse_known_args()[0]).keys()) - global_names
+    trainer_names = set(
+        vars(parser.parse_known_args()[0]).keys()) - global_names
 
     args = {}
     trainer_args = {}
@@ -200,11 +211,12 @@ def parse_args():
             trainer_args[k] = v
 
     args['trainer'] = trainer_args
-    
+
     return args
 
+
 if __name__ == '__main__':
-    args=parse_args()
+    args = parse_args()
     configs = load_config(args.pop('config'))
     configs = update_configs(configs, args)
     os.system(f"sudo chmod 777 -R {configs['ckpt_root']}")

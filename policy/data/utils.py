@@ -14,6 +14,7 @@
 import numpy as np
 import math
 
+
 def alpha2rotm(a):
     """Alpha euler angle to rotation matrix."""
     rotm = np.array([
@@ -22,6 +23,7 @@ def alpha2rotm(a):
         [0, np.sin(a),  np.cos(a)]
     ])
     return rotm
+
 
 def beta2rotm(b):
     """Beta euler angle to rotation matrix."""
@@ -32,6 +34,7 @@ def beta2rotm(b):
     ])
     return rotm
 
+
 def gamma2rotm(c):
     """Gamma euler angle to rotation matrix."""
     rotm = np.array([
@@ -40,6 +43,7 @@ def gamma2rotm(c):
         [0, 0, 1]
     ])
     return rotm
+
 
 def euler2rotm(euler_angles):
     """Euler angle (ZYX) to rotation matrix."""
@@ -55,6 +59,7 @@ def euler2rotm(euler_angles):
 
     return rotm
 
+
 def isRotm(R):
     # Checks if a matrix is a valid rotation matrix.
     # Forked from Andy Zeng
@@ -64,22 +69,23 @@ def isRotm(R):
     n = np.linalg.norm(I - shouldBeIdentity)
     return n < 1e-6
 
+
 def rotm2euler(R):
     # Forked from: https://learnopencv.com/rotation-matrix-to-euler-angles/
     # R = Rz * Ry * Rx
-    assert(isRotm(R))
-    sy = math.sqrt(R[0,0] * R[0,0] + R[1,0] * R[1,0])
+    assert (isRotm(R))
+    sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
     singular = sy < 1e-6
- 
-    if not singular :
-        x = math.atan2(R[2,1] , R[2,2])
-        y = math.atan2(-R[2,0], sy)
-        z = math.atan2(R[1,0], R[0,0])
-    else :
-        x = math.atan2(-R[1,2], R[1,1])
-        y = math.atan2(-R[2,0], sy)
+
+    if not singular:
+        x = math.atan2(R[2, 1], R[2, 2])
+        y = math.atan2(-R[2, 0], sy)
+        z = math.atan2(R[1, 0], R[0, 0])
+    else:
+        x = math.atan2(-R[1, 2], R[1, 1])
+        y = math.atan2(-R[2, 0], sy)
         z = 0
-    
+
     # (-pi , pi]
     while x > np.pi:
         x -= (2 * np.pi)
@@ -94,4 +100,3 @@ def rotm2euler(R):
     while z <= -np.pi:
         z += (2 * np.pi)
     return np.array([x, y, z])
-

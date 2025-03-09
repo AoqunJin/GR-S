@@ -29,7 +29,10 @@ import numpy as np
 import torch
 from calvin_env.envs.play_table_env import get_env
 from calvin_env.utils.utils import EglDeviceNotFoundError, get_egl_device_id
+
 logger = logging.getLogger(__name__)
+
+
 class CalvinEnvWrapperRaw(gym.Wrapper):
     def __init__(self, abs_datasets_dir, observation_space, device, show_gui=False, **kwargs):
         """Environment wrapper which returns raw observations.
@@ -51,7 +54,8 @@ class CalvinEnvWrapperRaw(gym.Wrapper):
     @staticmethod
     def set_egl_device(device):
         if "EGL_VISIBLE_DEVICES" in os.environ:
-            logger.warning("Environment variable EGL_VISIBLE_DEVICES is already set. Is this intended?")
+            logger.warning(
+                "Environment variable EGL_VISIBLE_DEVICES is already set. Is this intended?")
         cuda_id = device.index if device.type == "cuda" else 0
         try:
             egl_id = get_egl_device_id(cuda_id)
@@ -77,14 +81,16 @@ class CalvinEnvWrapperRaw(gym.Wrapper):
             elif action_tensor.shape[-1] == 8:
                 slice_ids = [3, 7]
             else:
-                logger.error("actions are required to have length 8 (for euler angles) or 9 (for quaternions)")
+                logger.error(
+                    "actions are required to have length 8 (for euler angles) or 9 (for quaternions)")
                 raise NotImplementedError
-            action = np.split(action_tensor.squeeze().cpu().detach().numpy(), slice_ids)
+            action = np.split(
+                action_tensor.squeeze().cpu().detach().numpy(), slice_ids)
         action[-1] = 1 if action[-1] > 0 else -1
         o, r, d, i = self.env.step(action)
 
         # obs = self.transform_observation(o)
-        obs = o # use raw observation
+        obs = o  # use raw observation
         return obs, r, d, i
 
     def reset(
@@ -106,7 +112,7 @@ class CalvinEnvWrapperRaw(gym.Wrapper):
             obs = self.env.reset()
 
         # return self.transform_observation(obs)
-        return obs # use raw observation
+        return obs  # use raw observation
 
     def get_info(self):
         return self.env.get_info()
@@ -114,4 +120,4 @@ class CalvinEnvWrapperRaw(gym.Wrapper):
     def get_obs(self):
         obs = self.env.get_obs()
         # return self.transform_observation(obs)
-        return obs # use raw observation
+        return obs  # use raw observation

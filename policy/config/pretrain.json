@@ -2,6 +2,8 @@
     "seed": 123,
     "ckpt_root": "SAVE_PATH/policy/checkpoints/",
     "log_root": "LOG_PATH/policy/logs/",
+    "ego4d_video_data_root": "PATH_TO_Ego4d_Videos",
+    "ego4d_annotation_data_root": "PATH_TO_Ego4d_800k_annotations",
     "exp_name":"pretrain_policy",
     "resume":null,
     "policy": {

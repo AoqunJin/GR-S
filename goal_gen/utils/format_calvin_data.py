@@ -24,6 +24,8 @@ import cv2
 
 SPLITS = ['training']
 # SPLITS = ['validation']
+
+
 def main(data_dir, target_dir, num_trajs_per_task=10000):
     for split in SPLITS:
         meta = dict()
@@ -31,7 +33,7 @@ def main(data_dir, target_dir, num_trajs_per_task=10000):
         os.mkdir(split_dir)
         dataset_dir = os.path.join(data_dir, split)
         anns = np.load(
-            os.path.join(dataset_dir, "lang_annotations", "auto_lang_ann.npy"), 
+            os.path.join(dataset_dir, "lang_annotations", "auto_lang_ann.npy"),
             allow_pickle=True).item()
         n_trajs = len(anns['info']['indx'])
         task_dict = {}
@@ -51,22 +53,27 @@ def main(data_dir, target_dir, num_trajs_per_task=10000):
             traj_st, traj_ed = anns['info']['indx'][traj_idx]
             traj_text = anns['language']['ann'][traj_idx]
             for i in range(traj_st, traj_ed + 1):
-                frame = np.load(os.path.join(dataset_dir, f"episode_{i:07d}.npz"))
+                frame = np.load(os.path.join(
+                    dataset_dir, f"episode_{i:07d}.npz"))
                 static_rgb = frame['rgb_static']
                 hand_rgb = frame['rgb_gripper']
-                cv2.imwrite(os.path.join(traj_dir, f"{i - traj_st}_static.png"), cv2.cvtColor(static_rgb, cv2.COLOR_BGR2RGB))
-                cv2.imwrite(os.path.join(traj_dir, f"{i - traj_st}_hand.png"), cv2.cvtColor(hand_rgb, cv2.COLOR_BGR2RGB))
-            meta[traj_idx] = {"text": traj_text, "num_frames": int(traj_ed - traj_st + 1)}
+                cv2.imwrite(os.path.join(
+                    traj_dir, f"{i - traj_st}_static.png"), cv2.cvtColor(static_rgb, cv2.COLOR_BGR2RGB))
+                cv2.imwrite(os.path.join(
+                    traj_dir, f"{i - traj_st}_hand.png"), cv2.cvtColor(hand_rgb, cv2.COLOR_BGR2RGB))
+            meta[traj_idx] = {"text": traj_text,
+                              "num_frames": int(traj_ed - traj_st + 1)}
         with open(os.path.join(split_dir, "meta.json"), "w") as f:
             json.dump(meta, f)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", 
+    parser.add_argument("--data_dir",
                         type=str,
                         default="",
                         help="data directory")
-    parser.add_argument("--target_dir", 
+    parser.add_argument("--target_dir",
                         type=str,
                         default="",
                         help="target data directory")

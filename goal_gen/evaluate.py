@@ -22,13 +22,15 @@ from transformers import T5Tokenizer, T5EncoderModel
 from diffusers import AutoencoderKL, UNet2DConditionModel
 from goal_gen.utils.pipeline import Pipeline
 from goal_gen.data.calvindataset import CalvinDataset_Goalgen
+
+
 class IP2PEvaluation(object):
-    def __init__(self, 
+    def __init__(self,
                  ckpt_path,
-                 res=256):    
+                 res=256):
         # Init models
         pretrained_model_dir = "/mnt/bn/lpy-lq/stable_diffusion/instruct-pix2pix"
-        
+
         self.tokenizer = T5Tokenizer.from_pretrained("t5-base")
         self.text_encoder = T5EncoderModel.from_pretrained("t5-base")
         self.vae = AutoencoderKL.from_pretrained(
@@ -67,40 +69,40 @@ class IP2PEvaluation(object):
         self.res = res
         self.transform = transforms.Resize((res, res))
 
-    def evaluate(self, eval_result_dir, eval_data_dir,is_training):
-        os.makedirs(eval_result_dir,exist_ok=True)
-        save_dir=os.path.join(eval_result_dir,"debug.png")
+    def evaluate(self, eval_result_dir, eval_data_dir, is_training):
+        os.makedirs(eval_result_dir, exist_ok=True)
+        save_dir = os.path.join(eval_result_dir, "debug.png")
         dataset = CalvinDataset_Goalgen(
-            eval_data_dir, 
+            eval_data_dir,
             resolution=256,
             resolution_before_crop=288,
             center_crop=True,
-            forward_n_min_max=(20, 22), 
+            forward_n_min_max=(20, 22),
             is_training=is_training,
             use_full=True,
             color_aug=False
         )
         for i in range(0, len(dataset), 100):
             example = dataset[i]
-            text=example['input_text']
+            text = example['input_text']
             original_pixel_values = example['original_pixel_values']
             edited_pixel_values = example['edited_pixel_values']
-            progress=example["progress"]
+            progress = example["progress"]
 
-            progress=progress*10
-            text[0]=text[0]+f".And {progress}% of the instruction has been finished." 
+            progress = progress*10
+            text[0] = text[0] + \
+                f".And {progress}% of the instruction has been finished."
             print(text[0])
-            input_image_batch=[original_pixel_values]
+            input_image_batch = [original_pixel_values]
             predict_image = self.inference(input_image_batch, text)
 
-            fig, ax = plt.subplots(1,3)
+            fig, ax = plt.subplots(1, 3)
             for k in range(3):
                 original_image = original_pixel_values.permute(1, 2, 0).numpy()
                 original_image = (original_image + 1) / 2 * 255
                 original_image = np.clip(original_image, 0, 255)
                 original_image = original_image.astype(np.uint8)
                 ax[0].imshow(original_image)
-
 
                 edited_image = edited_pixel_values.permute(1, 2, 0).numpy()
                 edited_image = (edited_image + 1) / 2 * 255
@@ -110,7 +112,7 @@ class IP2PEvaluation(object):
 
                 ax[2].imshow(predict_image[0])
 
-            plt.savefig( save_dir,dpi=300)
+            plt.savefig(save_dir, dpi=300)
             plt.close()
 
     def inference(self, image_batch, text_batch):
@@ -118,7 +120,7 @@ class IP2PEvaluation(object):
         input_images = []
         for image in image_batch:
             if isinstance(image, np.ndarray):
-                image=Image.fromarray(image)
+                image = Image.fromarray(image)
             input_image = self.transform(image)
             input_images.append(input_image)
         edited_images = self.pipe(
@@ -130,13 +132,14 @@ class IP2PEvaluation(object):
             generator=self.generator,
             safety_checker=None,
             requires_safety_checker=False).images
-        edited_images=[ np.array(image) for image in edited_images]
+        edited_images = [np.array(image) for image in edited_images]
 
         return edited_images
 
-if __name__ == "__main__":  
-    ckpt_path="PATH_TO_IP2P_CKPT/epoch=49-step=102900.ckpt"
+
+if __name__ == "__main__":
+    ckpt_path = "PATH_TO_IP2P_CKPT/epoch=49-step=102900.ckpt"
     eval = IP2PEvaluation(ckpt_path)
     eval_data_dir = "PATH_TO_CALVIN/calvin/task_ABC_D/"
     eval_result_dir = "SAVE_DIR"
-    eval.evaluate(eval_result_dir, eval_data_dir,is_training=False)
+    eval.evaluate(eval_result_dir, eval_data_dir, is_training=False)

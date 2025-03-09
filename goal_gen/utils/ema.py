@@ -14,6 +14,8 @@
 import torch
 from torch import inf
 from collections import OrderedDict
+
+
 @torch.no_grad()
 def update_ema(ema_model, model, decay=0.999):
     """
@@ -26,10 +28,10 @@ def update_ema(ema_model, model, decay=0.999):
         # TODO: Consider applying only to params that require_grad to avoid small numerical changes of pos_embed
         ema_params[name].mul_(decay).add_(param.data, alpha=1 - decay)
 
+
 def requires_grad(model, flag=True):
     """
     Set requires_grad flag for all parameters in a model.
     """
     for p in model.parameters():
         p.requires_grad = flag
-

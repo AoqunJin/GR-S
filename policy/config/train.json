@@ -2,6 +2,7 @@
     "seed": 123,
     "ckpt_root": "SAVE_PATH/policy/checkpoints/",
     "log_root": "LOG_PATH/policy/logs/",
+    "calvin_data_root": "PATH_TO_CALVIN/calvin_data",
     "exp_name":"train_policy",
     "resume":null,
     "policy": {

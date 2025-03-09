@@ -23,10 +23,14 @@ import torchvision.transforms as T
 import time
 import numpy as np
 from data.utils import *
+
+
 ACTION_POS_SCALE = 50
 ACTION_ROT_SCALE = 20
 
 # source: https://github.com/facebookresearch/drqv2/blob/main/drqv2.py
+
+
 class RandomShiftsAug(nn.Module):
     # perform random shifts independently for each image in the batch
     def __init__(self, pad):
@@ -40,16 +44,19 @@ class RandomShiftsAug(nn.Module):
         padding = tuple([self.pad] * 4)
         x = F.pad(x, padding, "replicate")
         eps = 1.0 / (h + 2 * self.pad)
-        arange = torch.linspace(-1.0 + eps, 1.0 - eps, h + 2 * self.pad, device=x.device, dtype=x.dtype)[:h]
+        arange = torch.linspace(-1.0 + eps, 1.0 - eps, h +
+                                2 * self.pad, device=x.device, dtype=x.dtype)[:h]
         arange = arange.unsqueeze(0).repeat(h, 1).unsqueeze(2)
         base_grid = torch.cat([arange, arange.transpose(1, 0)], dim=2)
         base_grid = base_grid.unsqueeze(0).repeat(n, 1, 1, 1)
 
-        shift = torch.randint(0, 2 * self.pad + 1, size=(n, 1, 1, 2), device=x.device, dtype=x.dtype)
+        shift = torch.randint(
+            0, 2 * self.pad + 1, size=(n, 1, 1, 2), device=x.device, dtype=x.dtype)
         shift *= 2.0 / (h + 2 * self.pad)
 
         grid = base_grid + shift
         return F.grid_sample(x, grid, padding_mode="zeros", align_corners=False)
+
 
 class RandomShiftsSingleAug(nn.Module):
     #  perform same random shifts for each image in the batch
@@ -62,14 +69,16 @@ class RandomShiftsSingleAug(nn.Module):
         n, c, h, w = x.size()
         assert h == w
         padding = tuple([self.pad] * 4)
-        x = F.pad(x, padding, "replicate") # pad before shift
+        x = F.pad(x, padding, "replicate")  # pad before shift
         eps = 1.0 / (h + 2 * self.pad)
-        arange = torch.linspace(-1.0 + eps, 1.0 - eps, h + 2 * self.pad, device=x.device, dtype=x.dtype)[:h]
+        arange = torch.linspace(-1.0 + eps, 1.0 - eps, h +
+                                2 * self.pad, device=x.device, dtype=x.dtype)[:h]
         arange = arange.unsqueeze(0).repeat(h, 1).unsqueeze(2)
         base_grid = torch.cat([arange, arange.transpose(1, 0)], dim=2)
         base_grid = base_grid.unsqueeze(0).repeat(n, 1, 1, 1)
 
-        shift = torch.randint(0, 2 * self.pad + 1, size=(1, 1, 1, 2), device=x.device, dtype=x.dtype)
+        shift = torch.randint(
+            0, 2 * self.pad + 1, size=(1, 1, 1, 2), device=x.device, dtype=x.dtype)
         shift = shift.repeat(n, 1, 1, 1)
         shift *= 2.0 / (h + 2 * self.pad)
 
@@ -81,8 +90,8 @@ class CalvinDataset_Policy(Dataset):
     def __init__(self,
                  data_dir,
                  seq_len=10,
-                 act_len=5, 
-                 forward_n_max=25, 
+                 act_len=5,
+                 forward_n_max=25,
                  mode='train',
                  subfolder='task_ABC_D',
                  use_data_augmentation=True,
@@ -101,17 +110,17 @@ class CalvinDataset_Policy(Dataset):
         use_labeled: whether to use data annotated with language
         '''
         self.dataset_dir = os.path.join(data_dir, subfolder)
-        self.seq_len = seq_len 
+        self.seq_len = seq_len
         self.act_len = act_len
         self.forward_n_max = forward_n_max
         self.mode = mode
         self.use_data_augmentation = use_data_augmentation
         self.task_num = task_num
-        self.use_play=use_play
-        self.use_labeled=use_labeled
+        self.use_play = use_play
+        self.use_labeled = use_labeled
 
         self.action_dim = 7
-        self.state_dim = 7  # ( x,y,z,r,p,y,gripper) 
+        self.state_dim = 7  # ( x,y,z,r,p,y,gripper)
 
         if mode == 'validate':
             tag = "validation"
@@ -119,19 +128,19 @@ class CalvinDataset_Policy(Dataset):
             tag = "training"
         else:
             raise ValueError("Mode must be either train or validate")
-        
+
         # As we use MAE as Encoder, we need to resize and normalize
         self.input_size = (224, 224)
-        self.clip_mean = (0.485, 0.456, 0.406) 
+        self.clip_mean = (0.485, 0.456, 0.406)
         self.clip_std = (0.229, 0.224, 0.225)
 
         if self.use_data_augmentation:
             self.static_rgb_preprocess_train = T.Compose([
-                RandomShiftsSingleAug(pad=10), # 10 for static rgb
+                RandomShiftsSingleAug(pad=10),  # 10 for static rgb
                 T.Resize(self.input_size, interpolation=Image.BICUBIC),
                 T.Normalize(self.clip_mean, self.clip_std)])
             self.hand_rgb_preprocess_train = T.Compose([
-                RandomShiftsSingleAug(pad=4), # 4 for hand rgb
+                RandomShiftsSingleAug(pad=4),  # 4 for hand rgb
                 T.Resize(self.input_size, interpolation=Image.BICUBIC),
                 T.Normalize(self.clip_mean, self.clip_std)])
         else:
@@ -141,7 +150,7 @@ class CalvinDataset_Policy(Dataset):
             self.hand_rgb_preprocess_train = T.Compose([
                 T.Resize(self.input_size, interpolation=Image.BICUBIC),
                 T.Normalize(self.clip_mean, self.clip_std)])
-        
+
         self.static_rgb_preprocess_val = T.Compose([
             T.Resize(self.input_size, interpolation=Image.BICUBIC),
             T.Normalize(self.clip_mean, self.clip_std)])
@@ -153,54 +162,56 @@ class CalvinDataset_Policy(Dataset):
         self._initialize()
         print(f'{len(self)} samples in total')
 
-    def load(self,path):
+    def load(self, path):
         # Sometimes we can not immediately load the data when training in our GPU cluster. We set this protection mechanism
-        t1=time.time()
+        t1 = time.time()
         while True:
             try:
-                result=np.load(path)
+                result = np.load(path)
                 break
             except:
-                t2=time.time()
-                if (t2-t1) >60:
-                    assert False , "bad load"
+                t2 = time.time()
+                if (t2-t1) > 60:
+                    assert False, "bad load"
                 else:
                     continue
         return result
 
-
     def _initialize(self):
         """Generate the sequence index pair."""
         self.anns = np.load(
-            os.path.join(self.dataset_dir, "lang_annotations", "auto_lang_ann.npy"), 
+            os.path.join(self.dataset_dir, "lang_annotations",
+                         "auto_lang_ann.npy"),
             allow_pickle=True).item()
-        
+
         # (traj_index, start, end, act_end, traj_st)
         self.seq_tuple = []
         task_dict = {}
         n_trajs = len(self.anns['info']['indx'])
         print(f"{n_trajs} labeled trajectories!")
 
-        if self.use_labeled: 
+        if self.use_labeled:
             for traj_idx in range(n_trajs):
                 traj_st, traj_ed = self.anns['info']['indx'][traj_idx]
                 traj_task = self.anns['language']['task'][traj_idx]
-                text=self.anns["language"]["ann"][traj_idx]
+                text = self.anns["language"]["ann"][traj_idx]
                 if (traj_ed - self.seq_len - self.act_len + 2) <= traj_st:
-                    continue # exclude extremely short trajectory
+                    continue  # exclude extremely short trajectory
 
                 # sample trajectories based on task_num
                 if traj_task not in task_dict:
                     task_dict[traj_task] = 1
                 else:
                     task_dict[traj_task] = task_dict[traj_task] + 1
-                if task_dict[traj_task] > self.task_num: # when arriving the maximum number, stop sampling from the task
+                # when arriving the maximum number, stop sampling from the task
+                if task_dict[traj_task] > self.task_num:
                     continue
                 # the action in the last frame is discarded
                 for st in range(traj_st, traj_ed - self.seq_len + 1):
                     ed = st + self.seq_len
-                    act_ed = st + self.seq_len + self.act_len - 1 
-                    self.seq_tuple.append([traj_idx, st, ed, act_ed, traj_st, traj_ed,text])
+                    act_ed = st + self.seq_len + self.act_len - 1
+                    self.seq_tuple.append(
+                        [traj_idx, st, ed, act_ed, traj_st, traj_ed, text])
 
         if self.use_play:
             # if you want to train with play data, please first generate play.json, and replace the following path
@@ -215,8 +226,9 @@ class CalvinDataset_Policy(Dataset):
                 for st in range(traj_st, traj_ed - self.seq_len + 1):
                     ed = st + self.seq_len
                     act_ed = st + self.seq_len + self.act_len - 1
-                    self.seq_tuple.append([traj_idx, st, ed, act_ed, traj_st, traj_ed,''])
-    
+                    self.seq_tuple.append(
+                        [traj_idx, st, ed, act_ed, traj_st, traj_ed, ''])
+
     def __len__(self):
         return len(self.seq_tuple)
 
@@ -226,30 +238,31 @@ class CalvinDataset_Policy(Dataset):
         ed = curr_tuple[2]
         act_ed = curr_tuple[3]
         traj_st = curr_tuple[4]
-        traj_ed = curr_tuple[5]       
-        text=curr_tuple[6]
+        traj_ed = curr_tuple[5]
+        text = curr_tuple[6]
 
         static_rgbs = []
         hand_rgbs = []
         states = []
 
-
-        state_buffer = [np.zeros(self.state_dim) for _ in range(self.seq_len + self.act_len - 1)]
+        state_buffer = [np.zeros(self.state_dim)
+                        for _ in range(self.seq_len + self.act_len - 1)]
         state_valid = [0 for _ in range(self.seq_len + self.act_len - 1)]
 
-        tlen = ed - st # sequence length
+        tlen = ed - st  # sequence length
         assert tlen == self.seq_len
 
         for i in range(st, act_ed):
             if i <= traj_ed:
-                frame = self.load(os.path.join(self.dataset_dir, f"episode_{i:07d}.npz"))
+                frame = self.load(os.path.join(
+                    self.dataset_dir, f"episode_{i:07d}.npz"))
                 if i <= traj_ed:
                     state_buffer[i - st] = frame['robot_obs']
                     state_valid[i - st] = 1
-            
+
             if i < ed:
                 states += [frame['robot_obs']]
-                
+
                 static_rgb = frame['rgb_static']
                 static_rgb = Image.fromarray(static_rgb)
                 static_rgb = T.ToTensor()(static_rgb.convert("RGB"))
@@ -264,16 +277,18 @@ class CalvinDataset_Policy(Dataset):
         action_buffer = []
         action_valid = []
         if act_ed <= traj_ed:
-            act_ed_frame = self.load(os.path.join(self.dataset_dir, f"episode_{act_ed:07d}.npz"))
+            act_ed_frame = self.load(os.path.join(
+                self.dataset_dir, f"episode_{act_ed:07d}.npz"))
             state_buffer += [act_ed_frame['robot_obs']]
             state_valid += [1]
         else:
-            state_buffer += [np.zeros(self.action_dim)] # mask non-existent action
+            # mask non-existent action
+            state_buffer += [np.zeros(self.action_dim)]
             state_valid += [0]
         assert len(state_buffer) == (self.seq_len + self.act_len)
         assert len(state_valid) == (self.seq_len + self.act_len)
         for k in range(0, self.seq_len + self.act_len - 1):
-            
+
             if (state_valid[k] and state_valid[k+1]):
                 xyz0 = state_buffer[k][0:3]
                 rpy0 = state_buffer[k][3:6]
@@ -294,7 +309,7 @@ class CalvinDataset_Policy(Dataset):
             else:
                 action_buffer += [np.zeros(self.action_dim)]
                 action_valid += [0]
-        
+
         assert len(action_buffer) == (self.seq_len + self.act_len - 1)
         assert len(action_valid) == (self.seq_len + self.act_len - 1)
 
@@ -304,11 +319,12 @@ class CalvinDataset_Policy(Dataset):
         goal_ids = list(range(goal_min_idx, goal_max_idx))
         goal_idx = random.choice(goal_ids)
         assert (goal_idx >= ed) and (goal_idx <= traj_ed)
-        goal_frame = self.load(os.path.join(self.dataset_dir, f"episode_{goal_idx:07d}.npz"))
+        goal_frame = self.load(os.path.join(
+            self.dataset_dir, f"episode_{goal_idx:07d}.npz"))
         goal_rgb = goal_frame['rgb_static']
         goal_rgb = Image.fromarray(goal_rgb)
         goal_rgb = T.ToTensor()(goal_rgb.convert("RGB"))
-        static_rgbs.append(goal_rgb) # put goal_rgb at the end of static_rgbs
+        static_rgbs.append(goal_rgb)  # put goal_rgb at the end of static_rgbs
 
         # preprocess all Images
         static_rgbs = torch.stack(static_rgbs, dim=0)
@@ -324,20 +340,23 @@ class CalvinDataset_Policy(Dataset):
 
         # transform them into torch tensor
         _, C, H, W = static_rgbs.shape
-        rgb_data  = torch.zeros((self.seq_len, C, H, W)).float() # (len, C, H, W)
+        rgb_data = torch.zeros((self.seq_len, C, H, W)
+                               ).float()  # (len, C, H, W)
         _, C, H, W = hand_rgbs.shape
-        hand_rgb_data = torch.zeros((self.seq_len, C, H, W)).float() # (len, C, H, W)
-        rgb_data [:tlen] = static_rgbs
+        hand_rgb_data = torch.zeros(
+            (self.seq_len, C, H, W)).float()  # (len, C, H, W)
+        rgb_data[:tlen] = static_rgbs
         hand_rgb_data[:tlen] = hand_rgbs
-        goal_rgb_data = goal_rgb.float() # (C, H, W)
-    
+        goal_rgb_data = goal_rgb.float()  # (C, H, W)
+
         # State
         states = np.array(states)
         arm_states = states[:, :6]
-        gripper_states = (states[:, -1:] + 1.0) / 2.0 # (-1, 1) -> (0, 1)
+        gripper_states = (states[:, -1:] + 1.0) / 2.0  # (-1, 1) -> (0, 1)
         states = np.hstack([arm_states, gripper_states])
         states = torch.from_numpy(states)
-        state_data = torch.zeros(self.seq_len, self.state_dim).float() # (len, state_dim)
+        state_data = torch.zeros(
+            self.seq_len, self.state_dim).float()  # (len, state_dim)
         state_data[:tlen] = states
 
         # Relative state
@@ -358,7 +377,8 @@ class CalvinDataset_Policy(Dataset):
             rel_states[i, 0:3] = rel_xyz
             rel_states[i, 3:6] = rel_rpy
             rel_states[i, 6] = curr_gripper
-        rel_state_data= torch.zeros(self.seq_len, self.state_dim).float() # (len, state_dim)
+        rel_state_data = torch.zeros(
+            self.seq_len, self.state_dim).float()  # (len, state_dim)
         rel_state_data[:tlen] = torch.from_numpy(rel_states)
 
         # Action and action mask
@@ -367,42 +387,43 @@ class CalvinDataset_Policy(Dataset):
         for i in range(0, ed - st):
             actions.append(action_buffer[i:(i+self.act_len)])
             action_masks.append(action_valid[i:(i+self.act_len)])
-        actions = np.array(actions) # (len, act_len, act_dim)
+        actions = np.array(actions)  # (len, act_len, act_dim)
         actions = torch.from_numpy(actions)
-        action_data  = torch.zeros(self.seq_len, self.act_len, self.action_dim).float() # (len, act_len, action_dim)
-        action_data [:tlen] = actions
-        action_masks = np.array(action_masks) # (len, act_len, act_dim)
+        # (len, act_len, action_dim)
+        action_data = torch.zeros(
+            self.seq_len, self.act_len, self.action_dim).float()
+        action_data[:tlen] = actions
+        action_masks = np.array(action_masks)  # (len, act_len, act_dim)
         action_masks = torch.from_numpy(action_masks).long()
-        action_mask_data = torch.zeros(self.seq_len, self.act_len).long() # (len, act_len, action_dim)
+        # (len, act_len, action_dim)
+        action_mask_data = torch.zeros(self.seq_len, self.act_len).long()
         action_mask_data[:tlen] = action_masks
 
         # Attention mask (should be all 1 for full dataset)
-        attention_mask = np.ones(self.seq_len, dtype=np.int32) # (len)
+        attention_mask = np.ones(self.seq_len, dtype=np.int32)  # (len)
         attention_mask[tlen:] = 0.0
         assert np.sum(attention_mask) == self.seq_len
         attention_mask_data = torch.from_numpy(attention_mask).long()
 
-
-        #progress
-        progress_data=torch.zeros(self.seq_len).float()
+        # progress
+        progress_data = torch.zeros(self.seq_len).float()
         for i in range(self.seq_len):
-            progress=(st+i-traj_st)/(traj_ed-traj_st)
-            progress_data[i]=progress
+            progress = (st+i-traj_st)/(traj_ed-traj_st)
+            progress_data[i] = progress
 
-        
         data = dict()
-        data['goal_rgb'] = goal_rgb_data # (C, H, W)
-        data['rgb'] = rgb_data # (len, C, H, W)
-        data['hand_rgb'] = hand_rgb_data # (len, C, H, W)
-        data['state'] = state_data # (len, state_dim)
-        data['rel_state'] = rel_state_data # (len, state_dim)
-        data['action'] = action_data # (len, act_len, action_dim)
-        data['attention_mask'] = attention_mask_data # (len,)
-        data['action_mask'] = action_mask_data # (len, act_len, action_dim)
+        data['goal_rgb'] = goal_rgb_data  # (C, H, W)
+        data['rgb'] = rgb_data  # (len, C, H, W)
+        data['hand_rgb'] = hand_rgb_data  # (len, C, H, W)
+        data['state'] = state_data  # (len, state_dim)
+        data['rel_state'] = rel_state_data  # (len, state_dim)
+        data['action'] = action_data  # (len, act_len, action_dim)
+        data['attention_mask'] = attention_mask_data  # (len,)
+        data['action_mask'] = action_mask_data  # (len, act_len, action_dim)
         data['text'] = [text]
-        data["progress"]=progress_data #(len)
+        data["progress"] = progress_data  # (len)
         return data
-  
+
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
@@ -420,10 +441,10 @@ if __name__ == "__main__":
         use_data_augmentation=False,
         use_play=False,
         task_num=10000)
-    
+
     rgb_mean = np.array([0.485, 0.456, 0.406])
-    rgb_std  = np.array([0.229, 0.224, 0.225])
-    for i in range(0, len(DS0),100):
+    rgb_std = np.array([0.229, 0.224, 0.225])
+    for i in range(0, len(DS0), 100):
         data = DS0[i]
         text = data['text']
         goal_rgb = data['goal_rgb']
@@ -451,7 +472,7 @@ if __name__ == "__main__":
             temp_rgb = np.clip(temp_rgb, 0.0, 1.0)
             ax[k // 3, k % 3].imshow(temp_rgb)
         plt.savefig("debug_goal_hand_rgb.png", dpi=300)
-        
+
         accumulated_action = np.zeros(7)
         # the following is to check whether the computation of relative actions is correct
         for k in range(seq_len-1):
@@ -467,7 +488,7 @@ if __name__ == "__main__":
 
             accumulated_xyz += np.dot(accumulated_rotm, curr_xyz)
             accumulated_rotm = accumulated_rotm @ curr_rotm
-            accumulated_rpy = rotm2euler(accumulated_rotm) 
+            accumulated_rpy = rotm2euler(accumulated_rotm)
 
             next_rel_state = rel_state[k+1].numpy()
             assert np.allclose(curr_gripper, next_rel_state[-1]), "gripper"

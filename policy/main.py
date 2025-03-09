@@ -27,10 +27,13 @@ from lightning.pytorch.trainer import Trainer
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.strategies import DDPStrategy
 from lightning import seed_everything
+from torch.utils.data import DataLoader
+
+from training.trainer import Policy_Trainer
 from data.calvin_dataset import CalvinDataset_Policy
 from data.ego4d_dataset import Ego4DDataset_Policy
-from training.trainer import Policy_Trainer
-from torch.utils.data import DataLoader
+
+
 def set_seed(seed=0):
     random.seed(seed)
     np.random.seed(seed)
@@ -41,6 +44,7 @@ def set_seed(seed=0):
 
 def get_date_str():
     return str(datetime.date.today())
+
 
 class SetupCallback(Callback):
     def __init__(self, now, logdir, ckptdir):
@@ -55,12 +59,14 @@ class SetupCallback(Callback):
             os.makedirs(self.logdir, exist_ok=True)
             os.makedirs(self.ckptdir, exist_ok=True)
 
+
 def init_setup_callback(config):
     return SetupCallback(
         now=str(datetime.datetime.now()).replace(' ', '_'),
         logdir=config['log_dir'],
         ckptdir=config['ckpt_dir']
     )
+
 
 def init_trainer_config(configs):
     trainer_config = copy.deepcopy(configs['trainer']["pl_config"])
@@ -79,7 +85,6 @@ def init_trainer_config(configs):
     Path(configs['log_dir']).mkdir(parents=True, exist_ok=True)     
     trainer_config['logger'] = [TensorBoardLogger(log_dir, name=exp_name)]
 
-
     # TODO: make callbacks configurable
     ckpt_dir = os.path.join(get_date_str(), exp_name)
     ckpt_dir = os.path.join(configs['ckpt_root'], ckpt_dir)
@@ -93,6 +98,7 @@ def init_trainer_config(configs):
 
     return trainer_config
 
+
 def experiment(variant):
     set_seed(variant['seed'])
     trainer_config = init_trainer_config(variant)
@@ -101,38 +107,39 @@ def experiment(variant):
     # dataset
     if variant["trainer"]["finetune"]:
         train_data= CalvinDataset_Policy(
-                data_dir="PATH_TO_CALVIN/calvin_data",
+                data_dir=variant["calvin_data_root"],
                 use_data_augmentation=True,
-                subfolder= "task_ABC_D",
-                mode= "train",
+                subfolder="task_ABC_D",
+                mode="train",
                 forward_n_max=25,
                 use_play=False,
                 use_labeled=True)
         val_data= CalvinDataset_Policy(
-                data_dir="PATH_TO_CALVIN/calvin_data",
+                data_dir=variant["calvin_data_root"],
                 use_data_augmentation=False,
-                subfolder= "task_ABC_D",
-                mode= "validate",
+                subfolder="task_ABC_D",
+                mode="validate",
                 forward_n_max=25,
                 use_play=False,
                 use_labeled=True)
     else:
         train_data= Ego4DDataset_Policy(
-                data_dir="PATH_TO_Ego4d_Videos",
+                data_dir=variant["ego4d_video_data_root"],
                 preprocess=None,
                 video_sample_rate=2,
                 seq_len=10,
-                annotation_file= "PATH_TO_Ego4d_800k_annotations",
+                annotation_file=variant["ego4d_annotation_data_root"],
                 use_data_augmentation=True,
                 goal_interval=7)
         val_data= Ego4DDataset_Policy(
-                data_dir="PATH_TO_Ego4d_Videos",
+                data_dir=variant["ego4d_video_data_root"],
                 preprocess=None,
                 video_sample_rate=2,
                 seq_len=10,
-                annotation_file= "PATH_TO_Ego4d_800k_annotations",
+                annotation_file=variant["ego4d_annotation_data_root"],
                 use_data_augmentation=False,
                 goal_interval=7)
+        
     train_dataloader= DataLoader(train_data, 
         batch_size=variant["trainer"]["batch_size"],
         num_workers=variant["trainer"]["num_workers"])
@@ -173,9 +180,8 @@ def parse_args():
     return configs
 
 
-
 if __name__ == '__main__':
     configs=parse_args()
-    os.system(f"sudo chmod 777 -R {configs['ckpt_root']}")
-    os.system(f"sudo chmod 777 -R {configs['log_root']}")
+    # os.system(f"sudo chmod 777 -R {configs['ckpt_root']}")
+    # os.system(f"sudo chmod 777 -R {configs['log_root']}")
     experiment(variant=configs)
