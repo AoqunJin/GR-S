@@ -36,11 +36,11 @@ class GR_MG(nn.Module):
             self,
             state_dim,
             act_dim,
-            act_len,
-            act_latent_dim,
-            act_encoder_dim,
-            act_decoder_dim,
-            progress_decoder_dim,
+            act_len,  # for action chunking
+            act_latent_dim,  # for action chunking
+            act_encoder_dim,  # for action chunking
+            act_decoder_dim,  # for action chunking
+            progress_decoder_dim,  # for action chunking
             hidden_size,
             model_mae,
             clip_model,
@@ -48,12 +48,12 @@ class GR_MG(nn.Module):
             lang_feat_dim,
             patch_feat_dim,
             resampler_params,
-            max_length=None,
+            max_length=None,  # sequence_length -> max_length
             training_target=['act_pred'],
             without_norm_pix_loss=False,
             use_hand_rgb=False,
-            use_state=False,
-            use_resampler=True,
+            use_state=False,  # ablation parameter
+            use_resampler=True,  # ablation parameter
             **kwargs):
         super(GR_MG, self).__init__()
         self.state_dim = state_dim
