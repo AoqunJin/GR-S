@@ -1,5 +1,7 @@
 data
 resources
+nohup.out
+*.log
 data/
 resources/
 __pycache__/

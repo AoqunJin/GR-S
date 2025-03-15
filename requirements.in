@@ -1,4 +1,5 @@
-moviepy
+# python==3.8
+moviepy==1.0.3
 matplotlib
 einops
 diffusers
@@ -21,3 +22,7 @@ opencv-python-headless
 regex
 tqdm
 decord
+termcolor
+omegaconf
+hydra==2.5
+git

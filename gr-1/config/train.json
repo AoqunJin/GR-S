@@ -1,6 +1,6 @@
 {
     "seed": 123,
-    "ckpt_root": "resources/policy/checkpoints/",
+    "ckpt_root": "resources/policy/gr-1/",
     "log_root": "resources/policy/logs/",
     "calvin_data_root": "data/calvin_data",
     "exp_name":"train_policy",
@@ -57,7 +57,7 @@
         "fwd_pred_hand": true,
         "fwd_pred_next_n": 3,
         "finetune": true,
-        "use_pretrain": true,
+        "use_pretrain": false,
         "pretrained_model_path": "resources/snapshot_ABC.pt"
     },
 

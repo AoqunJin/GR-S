@@ -21,7 +21,7 @@ This repo contains code for the paper:
 
 ## Preparation
 
-**Note:** We only test GR-MG with CUDA 12.1 and python 3.9
+**Note:** We only test GR-MG with CUDA 12.1 and python 3.8
 
 ```bash
 # clone this repository
@@ -33,7 +33,7 @@ sudo apt-get -y install libegl1-mesa libegl1 libgl1 libosmesa6-dev patchelf
 
 # install dependencies for goal image generation model
 # and multi-modal goal conditioned policy
-uv venv --python 3.9
+uv venv --python 3.8
 source .venv/bin/activate
 uv pip compile requirements.in -o requirements.txt
 uv pip sync requirements.txt

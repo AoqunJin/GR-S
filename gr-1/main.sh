@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=3
 
 cd /home/jinaoqun/workspace/GR-MG/
 GPUS_PER_NODE=1 # number of gpus per machine

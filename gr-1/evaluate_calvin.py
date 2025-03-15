@@ -32,6 +32,9 @@ import time
 import copy
 from moviepy.editor import ImageSequenceClip
 
+# /home/jinaoqun/workspace/GR-MG/calvin/calvin_models
+sys.path.append('/home/jinaoqun/workspace/GR-MG/calvin/calvin_models')
+
 # This is for using the locally installed repo clone when using slurm
 from calvin_agent.models.calvin_base_model import CalvinBaseModel
 
